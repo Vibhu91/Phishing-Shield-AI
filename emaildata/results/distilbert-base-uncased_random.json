@@ -1,0 +1,32 @@
+{
+  "val": {
+    "accuracy": 0.9964,
+    "precision": 0.9968,
+    "recall": 0.9961,
+    "f1": 0.9965,
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9999,
+    "runtime": 44.7477,
+    "samples_per_second": 407.529,
+    "steps_per_second": 12.738
+  },
+  "test": {
+    "accuracy": 0.9971,
+    "precision": 0.9965,
+    "recall": 0.9978,
+    "f1": 0.9972,
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9999,
+    "runtime": 44.7677,
+    "samples_per_second": 407.369,
+    "steps_per_second": 12.732
+  },
+  "info": {
+    "model": "distilbert-base-uncased",
+    "holdout": null,
+    "max_len": 256,
+    "train_rows": 145891,
+    "test_rows": 18237,
+    "minutes": 60.2
+  }
+}

@@ -1,0 +1,63 @@
+============================================================
+RAW DATASET
+============================================================
+Shape: (632554, 3)
+Missing values:
+url       0
+label     0
+source    0
+Duplicate URLs: 0
+
+============================================================
+FEATURE DATASET
+============================================================
+Shape: (632554, 51)
+Missing values total: 0
+
+Class balance (0=legit, 1=phishing):
+label
+0    352463
+1    280091
+Class balance (%):
+label
+0    55.72
+1    44.28
+
+Rows per source dataset:
+source
+phiusiil              232585
+raw_dataset           149512
+phishbd_2026          131138
+mendeley_url_phish    107921
+dataset_phishing       11398
+
+Label mix (%) per source:
+label                   0      1
+source                          
+dataset_phishing    50.09  49.91
+mendeley_url_phish  91.18   8.82
+phishbd_2026        30.00  70.00
+phiusiil            57.72  42.28
+raw_dataset         50.00  50.00
+
+Top 15 features correlated with label:
+url_entropy                 0.452269
+digit_ratio                 0.376687
+has_www                    -0.376052
+special_char_ratio         -0.347079
+hostname_length             0.337728
+has_https                  -0.335930
+hostname_entropy            0.313584
+has_suspicious_tld          0.235058
+count_hyphens               0.223462
+avg_word_length             0.219958
+count_slash                 0.193955
+suspicious_keyword_count    0.188000
+path_length                 0.183130
+tld_length                  0.177454
+count_digits                0.173421
+
+Feature pairs with |correlation| > 0.85 (3 pairs):
+url_length  count_letters    0.985731
+count_at    has_at_symbol    0.922043
+url_length  count_digits     0.852744

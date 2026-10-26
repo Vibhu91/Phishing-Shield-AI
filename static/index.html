@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phishing Shield AI — Multimodal Deep Learning Detector</title>
+  <meta name="description" content="Dual-Engine Phishing Detection System fusing DistilBERT email NLP intent and Keras Deep Neural Network lexical URL analysis.">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2338bdf8'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/></svg>">
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Top Header Bar -->
+    <header class="header-bar">
+      <div class="brand-section">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1>Phishing Shield AI</h1>
+          <div class="brand-subtitle">Multimodal Deep Learning Defense Platform</div>
+        </div>
+      </div>
+
+      <div class="status-pills">
+        <div class="badge badge-cuda" title="GPU Hardware Acceleration">
+          <span class="dot"></span>
+          <span>RTX 3050 CUDA ACTIVE</span>
+        </div>
+        <div class="badge badge-dual">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Dual-Engine Fusion</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav" role="tablist">
+      <button class="tab-btn active" data-tab="tab-email" id="tab-btn-email" role="tab" aria-selected="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        <span>Email Threat Analyzer (Dual-Engine)</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-url" id="tab-btn-url" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+        </svg>
+        <span>URL Threat Scanner (DNN)</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-benchmarks" id="tab-btn-benchmarks" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        <span>Benchmark Matrix</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-arch" id="tab-btn-arch" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <span>Architecture & Fusion</span>
+      </button>
+    </nav>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 1: EMAIL THREAT ANALYZER                                         -->
+    <!-- ==================================================================== -->
+    <section class="tab-content active" id="tab-email" role="tabpanel">
+      <div class="dashboard-grid">
+        
+        <!-- Input Form Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>Scan Suspicious Email</span>
+            </h2>
+            <p class="card-desc">Fuses DistilBERT semantic intent analysis with automatic link extraction &amp; 49-feature URL DNN scoring.</p>
+          </div>
+
+          <!-- Quick Load Sample Pills -->
+          <div class="samples-section">
+            <span class="samples-label">Quick Test Presets (1-Click Fill):</span>
+            <div class="sample-pills" id="email-sample-pills">
+              <!-- Dynamically populated or fallback -->
+            </div>
+          </div>
+
+          <form id="email-form">
+            <div class="form-group">
+              <label for="email-subject" class="form-label">Email Subject Header</label>
+              <input type="text" id="email-subject" class="form-input" placeholder="e.g. URGENT: Your account has been locked" required>
+            </div>
+
+            <div class="form-group">
+              <label for="email-body" class="form-label">Email Body Content</label>
+              <textarea id="email-body" class="form-textarea" placeholder="Paste the email message body here. Any embedded links will be automatically extracted and scored by the URL Deep Neural Network..." required></textarea>
+            </div>
+
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary" id="btn-scan-email">
+                <span class="btn-text">Analyze Email Threat</span>
+              </button>
+              <button type="button" class="btn btn-clear" id="btn-clear-email">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Result Display Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Threat Assessment Report</span>
+            </h2>
+            <p class="card-desc">Real-time inference verdict from the dual-engine fusion pipeline.</p>
+          </div>
+
+          <div class="result-box" id="email-result-box">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p>Ready for analysis. Enter an email on the left or select a quick test preset to run live inference.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 2: URL THREAT SCANNER                                            -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-url" role="tabpanel">
+      <div class="dashboard-grid">
+        
+        <!-- URL Input Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>Scan Standalone URL</span>
+            </h2>
+            <p class="card-desc">Analyzes 49 lexical, entropy, TLD, and structural security indicators via trained Keras DNN.</p>
+          </div>
+
+          <div class="samples-section">
+            <span class="samples-label">Quick Test Presets:</span>
+            <div class="sample-pills" id="url-sample-pills">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <form id="url-form">
+            <div class="form-group">
+              <label for="url-input" class="form-label">Target URL to Inspect</label>
+              <input type="text" id="url-input" class="form-input" placeholder="e.g. http://paypal-security-update.xyz/login.php" required>
+            </div>
+
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary" id="btn-scan-url">
+                <span class="btn-text">Inspect URL Security</span>
+              </button>
+              <button type="button" class="btn btn-clear" id="btn-clear-url">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- URL Result Card -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              <span>URL Threat Analysis</span>
+            </h2>
+            <p class="card-desc">Deep neural network classification and lexical risk signal detection.</p>
+          </div>
+
+          <div class="result-box" id="url-result-box">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+              <p>Enter any URL on the left to extract 49 structural features and compute its threat score.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 3: BENCHMARK MATRIX                                              -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-benchmarks" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span>Empirical Benchmark Performance Matrix</span>
+          </h2>
+          <p class="card-desc">Validated against real-world test sets comprising 126,511 test URLs and 83,948 benchmark emails.</p>
+        </div>
+
+        <div class="benchmark-table-wrapper">
+          <table class="benchmark-table" id="benchmark-table">
+            <thead>
+              <tr>
+                <th>Model Architecture</th>
+                <th>Evaluation Scope</th>
+                <th>Test Samples ($n$)</th>
+                <th>Accuracy</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+                <th>ROC-AUC</th>
+              </tr>
+            </thead>
+            <tbody id="benchmark-table-body">
+              <!-- Dynamically populated from /api/benchmarks -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+          <div class="reason-card">
+            <div class="reason-title">⚡ Hardware Accelerator</div>
+            <div class="reason-content" id="hardware-spec">NVIDIA GeForce RTX 3050 6GB Laptop GPU (CUDA 12.1 Enabled)</div>
+          </div>
+          <div class="reason-card">
+            <div class="reason-title">🎯 Threat Detection Guarantee</div>
+            <div class="reason-content">100.0% Recall on email attacks with zero false negatives (Noisy-OR link override).</div>
+          </div>
+          <div class="reason-card">
+            <div class="reason-title">🔗 Embedded Link Coverage</div>
+            <div class="reason-content">50.7% of phishing dataset emails contain at least one embedded hyperlink.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 4: ARCHITECTURE & FUSION                                         -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-arch" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            <span>Dual-Engine Multimodal Architecture</span>
+          </h2>
+          <p class="card-desc">How NLP semantic embeddings and structural lexical URL features combine for unified threat defense.</p>
+        </div>
+
+        <div class="arch-diagram">
+          <div class="arch-node">
+            <div class="arch-node-header">
+              <span class="arch-node-title">1. Natural Language Intent Engine (DistilBERT)</span>
+              <span class="arch-node-badge">PyTorch + HuggingFace</span>
+            </div>
+            <p class="card-desc">
+              Fine-tuned 6-layer Transformer with 66M parameters. Tokenizes email subject headers and message bodies into sub-word tokens with position embeddings. Captures social engineering urgency, fake credential requests, impersonation, and coercive semantics.
+            </p>
+          </div>
+
+          <div class="arch-node">
+            <div class="arch-node-header">
+              <span class="arch-node-title">2. Lexical &amp; Structural URL Security Engine (DNN)</span>
+              <span class="arch-node-badge">TensorFlow / Keras 3</span>
+            </div>
+            <p class="card-desc">
+              Extracts 49 offline numeric features: Shannon entropy of domain and path, brand keyword count, suspicious TLD match, IPv4 host detection, URL shortener detection, character ratio distributions, and subdomain nesting. Classifies through 3 Dense layers (128 &rarr; 64 &rarr; 32) with Dropout (0.3) and Batch Normalization.
+            </p>
+          </div>
+
+          <div class="arch-node">
+            <div class="arch-node-header">
+              <span class="arch-node-title">3. Multimodal Decision Fusion &amp; Override Gate</span>
+              <span class="arch-node-badge">Bayesian Noisy-OR Fusion</span>
+            </div>
+            <p class="card-desc">
+              When an email contains embedded hyperlinks, the system extracts every link and evaluates them in parallel. If any link demonstrates high-confidence malicious traits (<code class="mono">P_url &ge; 0.85</code>), an override flag is triggered regardless of benign email wording. Otherwise, probabilistic fusion combines threat vectors:
+              <br><br>
+              <code class="mono" style="color: var(--accent-cyan); font-size: 0.95rem;">
+                P_combined = 1 - (1 - P_email) &times; (1 - max(P_urls))
+              </code>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
