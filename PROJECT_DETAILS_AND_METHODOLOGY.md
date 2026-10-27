@@ -202,14 +202,56 @@ graph LR
 
 ### 4.3. Unified Multimodal Decision Fusion
 
-For full emails containing body text and embedded hyperlinks:
-1. DistilBERT computes textual phishing probability $P_{\text{email}} \in [0, 1]$.
-2. URL extractor parses all $n$ embedded URLs; each is scored by the URL DNN $\rightarrow \{P_{\text{URL}_1}, \dots, P_{\text{URL}_n}\}$.
+For full emails containing body text, embedded hyperlinks, email headers, and file attachments:
+1. **Email Text Semantics**: DistilBERT computes textual phishing probability $P_{\text{email}} \in [0, 1]$.
+2. **Embedded & Discovered URLs**: Extracted from email body, PDF streams, or decoded Quishing QR codes; each is scored by the 49-feature URL DNN $\rightarrow \{P_{\text{URL}_1}, \dots, P_{\text{URL}_n}\}$.
 3. **Probabilistic Combination (Bayesian Noisy-OR)**:
    $$P_{\text{combined}} = 1 - (1 - P_{\text{email}}) \times \prod_{i=1}^{n} (1 - P_{\text{URL}_i})$$
 4. **Zero-Trust URL Override**:
    $$\text{If } \max_{i} P_{\text{URL}_i} \ge 0.85 \implies \text{Verdict} = \text{PHISHING}, \quad P_{\text{final}} \ge \max_{i} P_{\text{URL}_i}$$
    *(Ensures deceptive, benign-sounding emails with one weaponized payload link cannot evade detection).*
+5. **Authentication & Spoofing Risk Injection**:
+   $$\text{If } P_{\text{header}} \ge 0.50 \implies P_{\text{combined}} = \max(P_{\text{combined}}, P_{\text{header}})$$
+   *(Elevates threat confidence when SPF/DKIM/DMARC fails or brand display-name impersonation is detected).*
+
+---
+
+### 4.4. Email Header Security & Authentication Scanner
+Implemented in [`header_auth_scanner.py`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/header_auth_scanner.py):
+- **Cryptographic Authentication**: Audits RFC 5322 MIME headers for **SPF**, **DKIM**, and **DMARC** policy enforcement (`pass`, `fail`, `softfail`, `neutral`).
+- **Display Name Brand Impersonation**: Flags high-target spoofing vectors (e.g. sender displays `"PayPal Security"` or `"Microsoft Support"`, but originates from `<service@attacker-domain.xyz>`).
+- **Routing Divergence**: Flags unaligned bounce routing (`Return-Path`) and response redirection (`Reply-To`).
+
+---
+
+### 4.5. Attachment & Quishing (QR Phishing) Scanner
+Implemented in [`attachment_scanner.py`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/attachment_scanner.py):
+- **2D QR Matrix Decoding**: Employs OpenCV `cv2.QRCodeDetector` to extract URLs hidden within image attachments (`.png`, `.jpg`, `.jpeg`, `.webp`, `.bmp`).
+- **PDF Malicious Structure Inspection**: Dissects PDF streams for embedded `/URI` actions, malicious JavaScript launch events (`/JS`), and executable triggers (`/Launch`).
+- **Automated DNN Pipeline Routing**: Discovered hyperlinks from QR flyers and PDF attachments are dynamically routed into the 49-feature URL DNN for real-time risk assessment.
+
+---
+
+### 4.6. Enterprise Mail Flow Gateways (Microsoft 365 & Google Workspace)
+Implemented in [`enterprise_connectors.py`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/enterprise_connectors.py):
+- **Microsoft 365 Integration**: Connects via **Microsoft Graph API v1.0** using OAuth 2.0 Client Credentials flow (`/users/{id}/mailFolders/inbox/messages`). Executes automated quarantine by moving flagged messages to `JunkEmail` and stamping them with threat category metadata.
+- **Google Workspace (Gmail) Integration**: Connects via **Gmail REST API** to poll inboxes, strip `INBOX` labels, and apply `PHISHING_ALERT` tags.
+- **Enterprise Simulation Mode**: Built-in test harness enabling offline testing and automated integration validation without live tenant credentials.
+
+---
+
+### 4.7. Asynchronous Task Queue & Container Deployment
+- **Celery & Redis Worker Engine** ([`celery_tasks.py`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/celery_tasks.py)):
+  - Distributed background task queues for enterprise ingestion throughput (`tasks.predict_email`, `tasks.predict_url`, `tasks.scan_attachment`, `tasks.gateway_sync`, `tasks.trigger_retrain`).
+- **Docker Multi-Stage Deployment** ([`Dockerfile`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/Dockerfile), [`docker-compose.yml`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/docker-compose.yml)):
+  - Orchestrates `phishing_redis` (`redis:7-alpine`), `phishing_soc_web` (Gunicorn production WSGI server), and `phishing_celery_worker`.
+
+---
+
+### 4.8. SOC Analyst Feedback & Continuous Retraining System
+Implemented in [`feedback_retraining.py`](file:///c:/Users/Vibhu-Kavi/Downloads/PhishingDeeplearning/feedback_retraining.py):
+- **Human-in-the-Loop Audit Database**: Persists verified analyst triage verdicts in SQLite (`feedback_store.db`), categorizing submissions into `FALSE_POSITIVE`, `FALSE_NEGATIVE`, or `CONFIRMED`.
+- **Continuous Retraining Pipeline**: Allows security teams to trigger incremental retraining (`POST /api/retrain/trigger` or CLI `--retrain-feedback`) to recalibrate decision boundaries against emerging attack variants.
 
 ---
 
@@ -246,17 +288,33 @@ For full emails containing body text and embedded hyperlinks:
 
 ---
 
-## 6. 🌐 Application & Deployment Artifacts
+## 6. 🌐 Application, APIs & Deployment Architecture
 
-1. **Flask Web Application (`app.py`)**:
-   - Modern glassmorphic SOC dashboard with animated SVG risk needle gauges.
-   - Dual-mode inspector: Email analysis & direct URL inspection.
-   - 13 Predefined attack scenarios (Credential harvesting, Microsoft 365, PayPal, IRS tax fraud, Amazon order, MetaMask KYC, etc.).
-2. **RESTful API**:
-   - `/api/predict/email` (POST): Accepts subject & body, returns combined threat score, URL list, and breakdown.
-   - `/api/predict/url` (POST): Accepts single URL, returns 49-feature extraction and risk score.
-   - `/api/benchmarks` (GET): Live benchmark metrics.
-   - `/api/samples` (GET): Preloaded test scenarios.
-   - `/api/health` (GET): Backend status and GPU acceleration status.
-3. **Pipeline Orchestrator (`main.py`)**:
-   - Automated CLI commands for data exploration, feature extraction, EDA, SMOTE preprocessing, DNN training, evaluation, and inference.
+1. **Cybersecurity Operations Center (SOC) Dashboard (`app.py`)**:
+   - Modern glassmorphic dark-mode interface with animated SVG risk needle gauges.
+   - **5 Interactive Inspection Tabs**:
+     - *Email Threat Analyzer (Dual-Engine)* with 1-click Human-in-the-Loop Analyst Triage.
+     - *URL Threat Scanner (49-Feature DNN)*.
+     - *Quishing & Attachments Inspector* (QR code decoders & PDF analyzers).
+     - *Header Security Audit* (SPF/DKIM/DMARC alignment & spoofing detection).
+     - *Enterprise & Retraining* (Live gateway monitoring, automated remediation logs, and feedback retraining triggers).
+   - 13 Predefined attack scenarios (Credential harvesting, Microsoft 365, PayPal, IRS fraud, Amazon order, MetaMask KYC, etc.).
+
+2. **Enterprise RESTful API**:
+   - `POST /api/predict/email`: Multimodal analysis of subject, body, and extracted links.
+   - `POST /api/predict/url`: 49-feature extraction profile and DNN risk score.
+   - `POST /api/scan/headers`: RFC 5322 header security audit (SPF/DKIM/DMARC/spoofing).
+   - `POST /api/scan/attachment`: File upload scanner for Quishing QR codes and PDF streams.
+   - `GET /api/gateway/scan`: Automated Microsoft 365 and Google Workspace mailbox audit.
+   - `POST /api/feedback`: Ingests verified analyst triage feedback into the retraining queue.
+   - `GET /api/feedback/stats`: Real-time feedback statistics and pending retraining count.
+   - `POST /api/retrain/trigger`: Triggers incremental model retraining.
+   - `GET /api/system/status`: Full subsystem operational status and hardware backend info.
+   - `GET /api/benchmarks` & `GET /api/samples`: Model metrics and test presets.
+
+3. **Pipeline Orchestrator CLI (`main.py`)**:
+   - `--explore`, `--extract`, `--eda`, `--preprocess`, `--train`, `--evaluate`, `--predict <URL>`, `--predict-email <SUB> <BODY>`.
+   - `--scan-attachment <FILE>`, `--scan-headers <FILE>`, `--gateway-sync`, `--retrain-feedback`, and `--all`.
+
+4. **Automated Verification Test Suite (`test_suite_all.py`)**:
+   - 6 automated end-to-end integration tests verifying all security modules, gateways, and REST endpoints.

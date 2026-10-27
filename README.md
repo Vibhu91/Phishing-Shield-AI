@@ -43,10 +43,15 @@ It includes a full-featured **Cybersecurity Operations Center (SOC) Web Dashboar
 
 - **Multimodal Threat Fusion**: Jointly analyzes email language (urgency, credential intimidation, pretexting) and deep lexical URL features, resolving cross-domain evasion attacks.
 - **High-Throughput Offline URL Inspection**: Extracts **49 hand-crafted statistical and lexical features** in microseconds without external DNS/WHOIS round-trips, eliminating attacker probe awareness and latency bottlenecks.
+- **Quishing & Attachment Scanner**: Decodes 2D QR codes (Quishing) inside image attachments with OpenCV and dissects PDF streams for `/URI` actions and `/JavaScript` execution.
+- **Email Header Security & Spoofing Defense**: Audits RFC 5322 MIME headers for **SPF, DKIM, and DMARC** compliance, flagging Display Name brand impersonation (e.g. PayPal, Microsoft).
+- **Enterprise Mail Flow Gateways**: Native connectors for **Microsoft 365** (MS Graph API) and **Google Workspace** (Gmail REST API) with automated threat quarantine and category labeling.
 - **State-of-the-Art NLP Semantics**: Fine-tuned on **182,364 real-world emails** using HuggingFace DistilBERT with sub-word tokenization and attention mechanisms.
 - **Zero-Trust URL Override**: Employs a Bayesian Noisy-OR probabilistic fusion with an emergency safety trigger: any high-confidence malicious URL ($P_{\text{URL}} \ge 0.85$) immediately flags the email as Phishing even if text mimics legitimate correspondence.
-- **Interactive SOC-Style Web Application**: Glassmorphism dark-mode UI with live animated risk gauges, structural breakdown charts, 13 pre-loaded real-world threat scenarios, and actionable remediation advice.
-- **Production REST API**: Scalable endpoints (`/api/predict/email`, `/api/predict/url`, `/api/benchmarks`, `/api/samples`, `/api/health`) with JSON responses.
+- **SOC Analyst Feedback & Continuous Retraining**: SQLite-backed human-in-the-loop triage system (`feedback_store.db`) allowing security analysts to report false positives/negatives and trigger automated retraining.
+- **Production Containerization & Task Queue**: Distributed asynchronous worker pipeline with **Celery and Redis**, fully deployable via **Docker Compose**.
+- **Interactive SOC-Style Web Application**: Glassmorphism dark-mode UI with live animated risk gauges, structural breakdown charts, 5 inspection tabs, 13 pre-loaded real-world threat scenarios, and actionable remediation advice.
+- **Production REST API**: Scalable endpoints (`/api/predict/email`, `/api/predict/url`, `/api/scan/headers`, `/api/scan/attachment`, `/api/gateway/scan`, `/api/feedback`, `/api/retrain/trigger`, `/api/system/status`).
 
 ---
 

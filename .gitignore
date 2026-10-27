@@ -35,6 +35,8 @@ Thumbs.db
 *.safetensors
 *.bin
 
-# Keep documentation, scripts, reports, images, and lightweight models
-!requirements.txt
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 

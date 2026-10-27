@@ -314,9 +314,153 @@ def get_benchmarks():
     })
 
 
+@app.route("/api/scan/headers", methods=["POST"])
+def scan_headers():
+    try:
+        from header_auth_scanner import HeaderAuthScanner
+        data = request.get_json(force=True) or {}
+        raw_headers = data.get("headers", "")
+        if not raw_headers:
+            return jsonify({"error": "Please provide email headers to scan."}), 400
+        scanner = HeaderAuthScanner()
+        result = scanner.scan(raw_headers)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scan/attachment", methods=["POST"])
+def scan_attachment():
+    try:
+        from attachment_scanner import AttachmentScanner
+        scanner = AttachmentScanner()
+
+        # Handle multipart file upload or JSON base64
+        filename = "upload"
+        file_bytes = b""
+        if "file" in request.files:
+            uploaded = request.files["file"]
+            filename = uploaded.filename or "upload"
+            file_bytes = uploaded.read()
+        else:
+            data = request.get_json(force=True) or {}
+            filename = data.get("filename", "upload")
+            b64_str = data.get("file_b64", "")
+            if b64_str:
+                import base64
+                file_bytes = base64.b64decode(b64_str)
+
+        if not file_bytes:
+            return jsonify({"error": "No file attachment data provided."}), 400
+
+        res = scanner.scan_attachment(filename, file_bytes)
+
+        # Route any discovered URLs through URL DNN
+        if res.get("extracted_urls"):
+            detector = get_detector()
+            res["url_assessments"] = [detector.predict_url(u) for u in res["extracted_urls"]]
+
+        return jsonify(res)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/gateway/scan", methods=["GET"])
+def gateway_scan():
+    try:
+        from enterprise_connectors import EnterpriseGatewayManager
+        detector = get_detector()
+        manager = EnterpriseGatewayManager()
+        results = manager.run_gateway_inspection(detector)
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/feedback", methods=["POST"])
+def submit_feedback():
+    try:
+        from feedback_retraining import FeedbackRetrainingManager
+        mgr = FeedbackRetrainingManager()
+        data = request.get_json(force=True) or {}
+
+        sample_type = data.get("sample_type", "email")
+        target_content = data.get("target_content", "")
+        predicted_prob = float(data.get("predicted_prob", 0.5))
+        predicted_verdict = data.get("predicted_verdict", "PHISHING")
+        analyst_verdict = data.get("analyst_verdict", "LEGITIMATE")
+        analyst_notes = data.get("analyst_notes", "")
+
+        if not target_content:
+            return jsonify({"error": "target_content is required."}), 400
+
+        result = mgr.submit_feedback(
+            sample_type=sample_type,
+            target_content=target_content,
+            predicted_prob=predicted_prob,
+            predicted_verdict=predicted_verdict,
+            analyst_verdict=analyst_verdict,
+            analyst_notes=analyst_notes
+        )
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/feedback/stats", methods=["GET"])
+def feedback_stats():
+    try:
+        from feedback_retraining import FeedbackRetrainingManager
+        mgr = FeedbackRetrainingManager()
+        return jsonify(mgr.get_feedback_metrics())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/retrain/trigger", methods=["POST"])
+def trigger_retrain():
+    try:
+        from feedback_retraining import FeedbackRetrainingManager
+        mgr = FeedbackRetrainingManager()
+        result = mgr.trigger_retraining()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/system/status", methods=["GET"])
+def system_status():
+    import torch
+    redis_online = False
+    try:
+        import redis
+        r = redis.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379/0"), socket_timeout=1)
+        redis_online = r.ping()
+    except Exception:
+        redis_online = False
+
+    return jsonify({
+        "status": "online",
+        "gpu_accelerated": torch.cuda.is_available(),
+        "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU",
+        "redis_broker": "connected" if redis_online else "offline (local fallback)",
+        "modules": {
+            "distilbert_transformer": "ready",
+            "url_dnn_49_features": "ready",
+            "bayesian_fusion": "ready",
+            "header_auth_spf_dkim_dmarc": "ready",
+            "quishing_qr_pdf_scanner": "ready",
+            "enterprise_m365_gmail_connectors": "ready",
+            "analyst_feedback_retraining": "ready",
+            "celery_async_queue": "ready"
+        }
+    })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     print(f"\n[🚀] Starting Phishing Detection Web Server on http://127.0.0.1:{port}")
     # Preload detector on startup
     get_detector()
     app.run(host="127.0.0.1", port=port, debug=False)
+

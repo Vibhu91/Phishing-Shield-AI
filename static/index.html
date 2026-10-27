@@ -59,6 +59,34 @@
         <span>URL Threat Scanner (DNN)</span>
       </button>
 
+      <button class="tab-btn" data-tab="tab-quishing" id="tab-btn-quishing" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+          <path d="M14 14h3v3h-3z"></path>
+          <path d="M20 14v6"></path>
+          <path d="M14 20h6"></path>
+        </svg>
+        <span>Quishing &amp; Attachments</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-headers" id="tab-btn-headers" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+          <polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+        <span>Header Security (SPF/DKIM)</span>
+      </button>
+
+      <button class="tab-btn" data-tab="tab-enterprise" id="tab-btn-enterprise" role="tab" aria-selected="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Enterprise &amp; Retraining</span>
+      </button>
+
       <button class="tab-btn" data-tab="tab-benchmarks" id="tab-btn-benchmarks" role="tab" aria-selected="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="20" x2="18" y2="10"></line>
@@ -325,6 +353,222 @@
               </code>
             </p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 3: QUISHING & ATTACHMENT SCANNER                                 -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-quishing" role="tabpanel">
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Scan QR Code (Quishing) &amp; PDF Attachments</span>
+            </h2>
+            <p class="card-desc">Decodes 2D QR matrices from image attachments and inspects PDF documents for obfuscated URLs, /URI annotations, and JavaScript launch actions.</p>
+          </div>
+
+          <div class="samples-section">
+            <span class="samples-label">Quick Test Presets:</span>
+            <div class="sample-pills">
+              <button type="button" class="sample-pill" id="btn-load-qr-demo">🚨 Test QR Phishing Flyer (Quishing)</button>
+              <button type="button" class="sample-pill" id="btn-load-pdf-demo">🚨 Test Invoice PDF with Embedded Payload</button>
+            </div>
+          </div>
+
+          <form id="attachment-form">
+            <div class="form-group">
+              <label for="attachment-file-input" class="form-label">Upload Image / QR / PDF Document</label>
+              <input type="file" id="attachment-file-input" class="form-input" accept=".png,.jpg,.jpeg,.webp,.pdf">
+            </div>
+
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary" id="btn-scan-attachment">
+                <span class="btn-text">Analyze Attachment</span>
+              </button>
+              <button type="button" class="btn btn-clear" id="btn-clear-attachment">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              <span>Attachment Triage Report</span>
+            </h2>
+            <p class="card-desc">Decoded payloads, structural threats, and routed URL DNN risk scores.</p>
+          </div>
+
+          <div class="result-box" id="attachment-result-box">
+            <div class="result-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <p>Upload an attachment or select a preset to begin Quishing inspection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 4: HEADER SECURITY & SPOOFING SCANNER                            -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-headers" role="tabpanel">
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              </svg>
+              <span>Email Header Authentication Audit</span>
+            </h2>
+            <p class="card-desc">Analyzes RFC 5322 MIME headers for SPF validation, DKIM cryptographic signatures, DMARC alignment, and Display Name impersonation.</p>
+          </div>
+
+          <div class="samples-section">
+            <span class="samples-label">Quick Test Presets:</span>
+            <div class="sample-pills">
+              <button type="button" class="sample-pill" id="btn-load-header-spoof">🚨 Fake PayPal Display Spoofing + SPF Fail</button>
+              <button type="button" class="sample-pill" id="btn-load-header-legit">🛡️ Legitimate Corporate M365 (SPF/DKIM/DMARC Pass)</button>
+            </div>
+          </div>
+
+          <form id="headers-form">
+            <div class="form-group">
+              <label for="headers-input" class="form-label">Raw RFC 5322 Email Headers</label>
+              <textarea id="headers-input" class="form-textarea" style="min-height: 180px;" placeholder="Paste headers here (e.g. From: ..., Return-Path: ..., Authentication-Results: ...)"></textarea>
+            </div>
+
+            <div class="btn-row">
+              <button type="submit" class="btn btn-primary" id="btn-scan-headers">
+                <span class="btn-text">Audit Authentication Headers</span>
+              </button>
+              <button type="button" class="btn btn-clear" id="btn-clear-headers">Clear</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span>Authentication &amp; Alignment Audit</span>
+            </h2>
+            <p class="card-desc">Cryptographic origin verification and sender reputation check.</p>
+          </div>
+
+          <div class="result-box" id="headers-result-box">
+            <div class="result-placeholder">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              </svg>
+              <p>Paste email headers and click Audit to inspect authentication records.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================== -->
+    <!-- TAB 5: ENTERPRISE GATEWAY & FEEDBACK RETRAINING                      -->
+    <!-- ==================================================================== -->
+    <section class="tab-content" id="tab-enterprise" role="tabpanel">
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Enterprise Mail Flow Gateways (Microsoft 365 &amp; Google Workspace)</span>
+          </h2>
+          <p class="card-desc">Active mail flow connectors monitoring corporate inboxes with automated threat quarantining &amp; Celery/Redis asynchronous workers.</p>
+        </div>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+          <div style="flex: 1; min-width: 200px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Microsoft 365 Gateway</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green); margin-top: 4px;">Connected (Active)</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">MS Graph API v1.0 • Auto-Quarantine ON</div>
+          </div>
+          <div style="flex: 1; min-width: 200px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Google Workspace Gateway</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green); margin-top: 4px;">Connected (Active)</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Gmail REST API • Auto-Tagging ON</div>
+          </div>
+          <div style="flex: 1; min-width: 200px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Task Worker Broker</div>
+            <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin-top: 4px;">Celery + Redis</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Distributed Task Queue Ready</div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="btn-trigger-gateway-scan">
+          <span class="btn-text">Execute Mailbox Gateway Scan &amp; Quarantine</span>
+        </button>
+
+        <div id="gateway-scan-output" style="margin-top: 16px;"></div>
+      </div>
+
+      <!-- Analyst Feedback & Continuous Retraining -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-cyan)" stroke-width="2">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+              <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+            <span>SOC Analyst Feedback &amp; Continuous Retraining Pipeline</span>
+          </h2>
+          <p class="card-desc">Human-in-the-loop triage records for model recalibration against emerging campaigns and false positive mitigation.</p>
+        </div>
+
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;" id="feedback-stats-counters">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="btn-row" style="margin-bottom: 20px;">
+          <button type="button" class="btn btn-primary" id="btn-trigger-retraining">
+            <span class="btn-text">🚀 Trigger Incremental Retraining on Feedback</span>
+          </button>
+          <button type="button" class="btn btn-clear" id="btn-refresh-feedback">Refresh Triage Log</button>
+        </div>
+
+        <div id="retrain-status-alert"></div>
+
+        <div style="overflow-x: auto; margin-top: 16px;">
+          <table class="benchmark-table" id="feedback-triage-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Inspected Target</th>
+                <th>Model Verdict</th>
+                <th>Analyst Correction</th>
+                <th>Classification</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Loading triage feedback...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>

@@ -203,13 +203,21 @@ class MergedPhishingDetector:
             "legit_prob": round(float(probs[0]), 4),
         }
 
-    def predict(self, subject: str = "", body: str = "", url: Optional[str] = None) -> Dict[str, Any]:
+    def predict(
+        self,
+        subject: str = "",
+        body: str = "",
+        url: Optional[str] = None,
+        headers: Optional[Any] = None,
+        attachments: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
         """
         Unified Multimodal Phishing Evaluation.
-        Merges DistilBERT (Email Language) and DNN (URL Security).
+        Merges DistilBERT (Email Language), DNN (URL Security),
+        Email Header Authentication (SPF/DKIM/DMARC), and Quishing Attachment Scanning.
         """
         # If user directly queries a single standalone URL
-        if url and not subject and not body:
+        if url and not subject and not body and not headers and not attachments:
             url_res = self.predict_url(url)
             return {
                 "mode": "URL_ONLY",
@@ -220,41 +228,72 @@ class MergedPhishingDetector:
                 "explanation": f"Evaluated via URL Deep Neural Network: {url_res['verdict']} ({url_res['phishing_prob']*100:.1f}%)"
             }
 
+        reasons = []
+
         # 1. Analyze Email Text with DistilBERT
         text_res = self.predict_email_text(subject, body)
         p_email = text_res["phishing_prob"]
 
-        # 2. Extract and analyze all embedded URLs with DNN
+        # 2. Extract and analyze all embedded URLs from text
         combined_text = (subject or "") + " " + (body or "")
         detected_urls = self.extract_urls(combined_text)
         if url and url not in detected_urls:
             detected_urls.insert(0, url)
 
+        # 3. Optional Attachment & Quishing QR scanning
+        attachment_reports = []
+        if attachments:
+            try:
+                from attachment_scanner import AttachmentScanner
+                attach_scanner = AttachmentScanner()
+                for att in attachments:
+                    fname = att.get("filename", "attachment")
+                    fdata = att.get("data")
+                    att_rep = attach_scanner.scan_attachment(fname, fdata)
+                    attachment_reports.append(att_rep)
+                    for discovered_url in att_rep.get("extracted_urls", []):
+                        if discovered_url not in detected_urls:
+                            detected_urls.append(discovered_url)
+                    for flag in att_rep.get("threat_flags", []):
+                        reasons.append(f"[Attachment Threat] {flag}")
+            except Exception as e:
+                print(f"[!] Attachment scanning warning: {e}")
+
+        # 4. Optional Header Authentication & Spoofing Inspection
+        header_report = None
+        p_header = 0.0
+        if headers:
+            try:
+                from header_auth_scanner import HeaderAuthScanner
+                hdr_scanner = HeaderAuthScanner()
+                header_report = hdr_scanner.scan(headers)
+                p_header = header_report.get("header_risk_score", 0.0)
+                for anom in header_report.get("anomalies", []):
+                    reasons.append(f"[Header Security] {anom}")
+            except Exception as e:
+                print(f"[!] Header inspection warning: {e}")
+
         url_analyses = [self.predict_url(u) for u in detected_urls]
 
-        # 3. Decision Fusion Engine
+        # 5. Multimodal Decision Fusion Engine
         if not url_analyses:
-            # No URLs present in email -> Pure NLP classification
             p_combined = p_email
             p_url_max = 0.0
-            reasons = [f"Classified purely via Natural Language Intent (DistilBERT: {p_email*100:.1f}% phishing probability)."]
+            reasons.append(f"Classified purely via Natural Language Intent (DistilBERT: {p_email*100:.1f}% phishing probability).")
         else:
             p_url_max = max(u["phishing_prob"] for u in url_analyses)
-            p_url_mean = float(np.mean([u["phishing_prob"] for u in url_analyses]))
 
             # Calibrated Multimodal Decision Fusion:
             # Case 1: URL is definitively malicious (>= 0.85) -> immediate override to high threat
             if p_url_max >= 0.85:
                 p_combined = max(p_email, p_url_max)
             # Case 2: Email text is strongly benign (< 0.20) and URL is only mildly suspicious (< 0.85)
-            # Prevent false positives on benign corporate newsletters or mailing lists
             elif p_email < 0.20:
                 p_combined = 0.85 * p_email + 0.15 * p_url_max
             # Case 3: Email text exhibits phishing/social engineering or ambiguous signals
             else:
                 p_combined = 1.0 - (1.0 - p_email) * (1.0 - p_url_max)
 
-            reasons = []
             if p_email >= 0.5:
                 reasons.append(f"Email text exhibits phishing/social-engineering signals (DistilBERT: {p_email*100:.1f}%).")
             else:
@@ -267,6 +306,11 @@ class MergedPhishingDetector:
                     reasons.append(f"Signals: {', '.join(worst_url['key_signals'])}")
             elif detected_urls:
                 reasons.append(f"{len(detected_urls)} link(s) inspected; all scored low-risk by DNN.")
+
+        # Boost risk if header spoofing or critical authentication failures are confirmed
+        if p_header >= 0.50:
+            p_combined = max(p_combined, p_header)
+            reasons.append(f"Authentication failure: Sender spoofing / SPF / DKIM verification failed ({p_header*100:.1f}% risk).")
 
         # Determine final verdict and overall threat severity
         verdict = "PHISHING" if p_combined >= 0.5 else "LEGITIMATE"
@@ -290,6 +334,8 @@ class MergedPhishingDetector:
             "max_url_phishing_prob": round(float(p_url_max), 4) if url_analyses else None,
             "urls_detected_count": len(url_analyses),
             "urls_analysis": url_analyses,
+            "header_security": header_report,
+            "attachment_analysis": attachment_reports,
             "explanation": " ".join(reasons)
         }
 

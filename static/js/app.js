@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", () => {
   initEmailForm();
   initUrlForm();
   loadBenchmarks();
+  initAttachmentScanner();
+  initHeadersScanner();
+  initEnterpriseGateway();
+  loadFeedbackTriage();
 });
 
 // -----------------------------------------------------------------------------
@@ -285,6 +289,22 @@ function renderEmailResult(container, data) {
 
     <!-- Links Breakdown -->
     ${linksHtml}
+
+    <!-- Analyst Feedback & Triage Action Bar -->
+    <div style="margin-top: 20px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">
+        SOC Analyst Feedback (Human-In-The-Loop Triage)
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="analyst-feedback-btns">
+        <button type="button" class="btn btn-clear" style="font-size: 0.8rem; padding: 6px 12px; border-color: rgba(244, 63, 94, 0.4); color: var(--accent-rose);" onclick="submitAnalystFeedback('email', ${prob}, '${data.verdict}', 'PHISHING')">
+          🚨 Confirm Phishing Threat
+        </button>
+        <button type="button" class="btn btn-clear" style="font-size: 0.8rem; padding: 6px 12px; border-color: rgba(56, 189, 248, 0.4); color: var(--accent-cyan);" onclick="submitAnalystFeedback('email', ${prob}, '${data.verdict}', 'LEGITIMATE')">
+          ⚠️ Report False Positive (Legitimate)
+        </button>
+      </div>
+      <div id="analyst-feedback-feedback-msg" style="margin-top: 6px; font-size: 0.8rem; display: none;"></div>
+    </div>
   `;
 
   // Animate Gauge
@@ -523,3 +543,386 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// -----------------------------------------------------------------------------
+// 8. Attachment & Quishing Scanner Controller
+// -----------------------------------------------------------------------------
+function initAttachmentScanner() {
+  const form = document.getElementById("attachment-form");
+  const fileInput = document.getElementById("attachment-file-input");
+  const resultBox = document.getElementById("attachment-result-box");
+  const btnQrDemo = document.getElementById("btn-load-qr-demo");
+  const btnPdfDemo = document.getElementById("btn-load-pdf-demo");
+  const clearBtn = document.getElementById("btn-clear-attachment");
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      fileInput.value = "";
+      resetResultBox(resultBox, "Upload an attachment or select a preset to begin Quishing inspection.");
+    });
+  }
+
+  if (btnQrDemo) {
+    btnQrDemo.addEventListener("click", async () => {
+      resultBox.innerHTML = "<p style='color: var(--accent-cyan);'>Decoding synthetic Quishing flyer...</p>";
+      try {
+        // Request backend to test synthetic QR code or send sample
+        const res = await fetch("/api/scan/attachment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: "quishing_alert_sample.png",
+            file_b64: "" // server fallback handles or tests
+          })
+        });
+        const data = await res.json();
+        renderAttachmentResult(resultBox, data);
+      } catch (err) {
+        resultBox.innerHTML = `<p style="color: var(--accent-rose);">Scan failed: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+
+  if (btnPdfDemo) {
+    btnPdfDemo.addEventListener("click", async () => {
+      resultBox.innerHTML = "<p style='color: var(--accent-cyan);'>Inspecting PDF URI actions and JavaScript streams...</p>";
+      try {
+        const samplePdfBytes = "JVBERi0xLjQKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9Bbm5vdHNbNCAwIFJdPj5lbmRvYmoKNCAwIG9iajw8L1R5cGUvQW5ub3QvU3VidHlwZS9MaW5rL0E8PC9TL1VSSS9VUkkoaHR0cDovL21hbGljaW91cy1sb2dpbi1wb3J0YWwueHl6L2F1dGgpPj4+PmVuZG9iago1IDAgb2JqPDwvSmF2YVNjcmlwdChhcHAuYWxlcnQoJ01hbHdhcmUnKTspPj5lbmRvYmoKdHJhaWxlcjw8L1Jvb3QgMSAwIFI+PgolJUVPRg==";
+        const res = await fetch("/api/scan/attachment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: "invoice_update.pdf",
+            file_b64: samplePdfBytes
+          })
+        });
+        const data = await res.json();
+        renderAttachmentResult(resultBox, data);
+      } catch (err) {
+        resultBox.innerHTML = `<p style="color: var(--accent-rose);">Scan failed: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please choose a file to inspect.");
+        return;
+      }
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      resultBox.innerHTML = "<p style='color: var(--accent-cyan);'>Analyzing attachment for QR codes, links &amp; payloads...</p>";
+      try {
+        const res = await fetch("/api/scan/attachment", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        renderAttachmentResult(resultBox, data);
+      } catch (err) {
+        resultBox.innerHTML = `<p style="color: var(--accent-rose);">Upload scan failed: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+}
+
+function renderAttachmentResult(container, data) {
+  const hasThreat = data.has_threat || (data.url_assessments && data.url_assessments.some(u => u.verdict === "PHISHING"));
+  const bannerClass = hasThreat ? "phish" : "safe";
+  const title = hasThreat ? "🚨 Attachment Threat / Quishing Detected" : "🛡️ Clean Attachment";
+
+  let flagsHtml = "";
+  if (data.threat_flags && data.threat_flags.length > 0) {
+    flagsHtml = data.threat_flags.map(f => `<li style="margin-bottom: 6px; color: var(--accent-rose);">${escapeHtml(f)}</li>`).join("");
+  } else {
+    flagsHtml = "<li style='color: var(--accent-emerald);'>No malicious structures or QR payloads discovered.</li>";
+  }
+
+  let urlsHtml = "";
+  if (data.url_assessments && data.url_assessments.length > 0) {
+    urlsHtml = data.url_assessments.map(u => `
+      <div class="link-card ${u.verdict === 'PHISHING' ? 'link-danger' : ''}" style="margin-top: 8px;">
+        <div class="link-top-row">
+          <span class="mono">${escapeHtml(u.url)}</span>
+          <span class="link-risk-pill ${u.verdict === 'PHISHING' ? 'danger' : 'safe'}">${Math.round(u.phishing_prob * 100)}% Risk</span>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  container.innerHTML = `
+    <div class="verdict-banner ${bannerClass}">
+      <div class="verdict-text-block">
+        <h3 class="verdict-title">${title}</h3>
+        <p class="verdict-subtext">File: ${escapeHtml(data.filename)} (${escapeHtml(data.extension)})</p>
+      </div>
+    </div>
+    <div class="reason-card" style="margin-top: 16px;">
+      <div class="reason-title">Structural &amp; QR Indicators</div>
+      <ul style="padding-left: 20px; font-size: 0.88rem; margin-top: 8px;">${flagsHtml}</ul>
+    </div>
+    ${urlsHtml ? `<div style="margin-top: 14px;"><div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">Discovered Web Payloads (URL DNN Evaluated):</div>${urlsHtml}</div>` : ""}
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// 9. Email Header Security Scanner Controller
+// -----------------------------------------------------------------------------
+function initHeadersScanner() {
+  const form = document.getElementById("headers-form");
+  const input = document.getElementById("headers-input");
+  const resultBox = document.getElementById("headers-result-box");
+  const btnSpoof = document.getElementById("btn-load-header-spoof");
+  const btnLegit = document.getElementById("btn-load-header-legit");
+  const clearBtn = document.getElementById("btn-clear-headers");
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      input.value = "";
+      resetResultBox(resultBox, "Paste email headers and click Audit to inspect authentication records.");
+    });
+  }
+
+  if (btnSpoof) {
+    btnSpoof.addEventListener("click", () => {
+      input.value = `From: "PayPal Account Security" <service-alert@paypal-update-alert.xyz>
+Return-Path: <bounce@unregistered-relay.org>
+Reply-To: <credentials-harvest@gmail.com>
+Authentication-Results: mx.google.com;
+    spf=fail (google.com: domain of service-alert@paypal-update-alert.xyz does not designate 192.0.2.1 as permitted sender);
+    dkim=fail header.i=@paypal-update-alert.xyz;
+    dmarc=fail (p=REJECT sp=REJECT dis=NONE) header.from=paypal.com
+Subject: URGENT: Your PayPal Account Has Been Suspended`;
+    });
+  }
+
+  if (btnLegit) {
+    btnLegit.addEventListener("click", () => {
+      input.value = `From: "Microsoft 365 Security" <no-reply@microsoft.com>
+Return-Path: <ms-bounces@microsoft.com>
+Authentication-Results: spf=pass (sender IP is 40.107.1.1) smtp.mailfrom=microsoft.com;
+    dkim=pass header.d=microsoft.com;
+    dmarc=pass (p=REJECT) header.from=microsoft.com
+Subject: Security notice: Sign-in from new country`;
+    });
+  }
+
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const raw = input.value.trim();
+      if (!raw) {
+        alert("Please paste email headers to audit.");
+        return;
+      }
+      resultBox.innerHTML = "<p style='color: var(--accent-cyan);'>Validating SPF, DKIM, DMARC, and sender authenticity...</p>";
+      try {
+        const res = await fetch("/api/scan/headers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ headers: raw })
+        });
+        const data = await res.json();
+        renderHeadersResult(resultBox, data);
+      } catch (err) {
+        resultBox.innerHTML = `<p style="color: var(--accent-rose);">Header audit failed: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+}
+
+function renderHeadersResult(container, data) {
+  const isSuspicious = data.header_risk_score >= 0.40;
+  const bannerClass = isSuspicious ? "phish" : "safe";
+  const title = isSuspicious ? `🚨 ${data.header_verdict}: Spoofing / Authentication Failure` : `🛡️ ${data.header_verdict}: Headers Validated`;
+
+  const spfColor = data.spf.status === "pass" ? "var(--accent-emerald)" : (data.spf.status === "fail" ? "var(--accent-rose)" : "var(--text-muted)");
+  const dkimColor = (data.dkim.status === "pass" || data.dkim.status === "present") ? "var(--accent-emerald)" : (data.dkim.status === "fail" ? "var(--accent-rose)" : "var(--text-muted)");
+  const dmarcColor = data.dmarc.status === "pass" ? "var(--accent-emerald)" : (data.dmarc.status === "fail" ? "var(--accent-rose)" : "var(--text-muted)");
+
+  let anomaliesHtml = "";
+  if (data.anomalies && data.anomalies.length > 0) {
+    anomaliesHtml = data.anomalies.map(a => `<li style="margin-bottom: 6px; color: var(--accent-rose);">${escapeHtml(a)}</li>`).join("");
+  } else {
+    anomaliesHtml = "<li style='color: var(--accent-emerald);'>All cryptographic authentication records passed alignment.</li>";
+  }
+
+  container.innerHTML = `
+    <div class="verdict-banner ${bannerClass}">
+      <div class="verdict-text-block">
+        <h3 class="verdict-title">${title}</h3>
+        <p class="verdict-subtext">Sender: ${escapeHtml(data.from || "Unknown")} (Domain: ${escapeHtml(data.from_domain)})</p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap;">
+      <div style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">SPF Status</span>
+        <div style="font-weight: 700; color: ${spfColor}; text-transform: uppercase; margin-top: 2px;">${escapeHtml(data.spf.status)}</div>
+      </div>
+      <div style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">DKIM Status</span>
+        <div style="font-weight: 700; color: ${dkimColor}; text-transform: uppercase; margin-top: 2px;">${escapeHtml(data.dkim.status)}</div>
+      </div>
+      <div style="flex: 1; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">DMARC Status</span>
+        <div style="font-weight: 700; color: ${dmarcColor}; text-transform: uppercase; margin-top: 2px;">${escapeHtml(data.dmarc.status)}</div>
+      </div>
+    </div>
+
+    ${data.spoofed_brand ? `
+      <div style="margin-top: 14px; padding: 12px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 6px; color: #fecdd3; font-size: 0.85rem;">
+        <strong>⚠️ Display Name Impersonation:</strong> This message impersonates <strong>${escapeHtml(data.spoofed_brand)}</strong>, but originates from domain <code>${escapeHtml(data.from_domain)}</code>.
+      </div>
+    ` : ""}
+
+    <div class="reason-card" style="margin-top: 14px;">
+      <div class="reason-title">Security &amp; Alignment Findings</div>
+      <ul style="padding-left: 20px; font-size: 0.88rem; margin-top: 8px;">${anomaliesHtml}</ul>
+    </div>
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// 10. Enterprise Mailbox Gateway & Continuous Retraining Controller
+// -----------------------------------------------------------------------------
+function initEnterpriseGateway() {
+  const btnScan = document.getElementById("btn-trigger-gateway-scan");
+  const output = document.getElementById("gateway-scan-output");
+  const btnRetrain = document.getElementById("btn-trigger-retraining");
+  const btnRefresh = document.getElementById("btn-refresh-feedback");
+
+  if (btnScan) {
+    btnScan.addEventListener("click", async () => {
+      output.innerHTML = "<p style='color: var(--accent-cyan);'>Polling Microsoft 365 Graph API &amp; Gmail Mailboxes...</p>";
+      try {
+        const res = await fetch("/api/gateway/scan");
+        const data = await res.json();
+        let logHtml = "";
+        if (data.threat_log && data.threat_log.length > 0) {
+          logHtml = data.threat_log.map(item => `
+            <div style="padding: 10px; margin-bottom: 8px; background: rgba(244, 63, 94, 0.08); border-left: 3px solid var(--accent-rose); border-radius: 4px;">
+              <strong>[${escapeHtml(item.gateway)}]</strong> Action: <span style="color: var(--accent-rose); font-weight: 700;">${escapeHtml(item.action)}</span><br>
+              <span style="font-size: 0.85rem;">${escapeHtml(item.subject)}</span> (Sender: <code>${escapeHtml(item.sender)}</code>) — Threat: ${(item.phishing_prob*100).toFixed(1)}%
+            </div>
+          `).join("");
+        } else {
+          logHtml = "<p style='color: var(--accent-emerald); font-size: 0.9rem;'>All polled inbox messages verified safe. Zero threats detected.</p>";
+        }
+
+        output.innerHTML = `
+          <div style="margin-top: 14px; padding: 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="font-weight: 600; margin-bottom: 8px;">Gateway Poll Results: M365 Scanned: ${data.m365_scanned} (${data.m365_quarantined} Quarantined) | Gmail Scanned: ${data.gmail_scanned} (${data.gmail_flagged} Flagged)</div>
+            ${logHtml}
+          </div>
+        `;
+      } catch (err) {
+        output.innerHTML = `<p style="color: var(--accent-rose);">Gateway sync error: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+
+  if (btnRetrain) {
+    btnRetrain.addEventListener("click", async () => {
+      const alertBox = document.getElementById("retrain-status-alert");
+      alertBox.innerHTML = "<p style='color: var(--accent-cyan);'>Triggering incremental training update...</p>";
+      try {
+        const res = await fetch("/api/retrain/trigger", { method: "POST" });
+        const data = await res.json();
+        alertBox.innerHTML = `<div style="padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--accent-emerald); border-radius: 6px; color: #a7f3d0; margin-bottom: 12px;">✅ ${escapeHtml(data.message)}</div>`;
+        loadFeedbackTriage();
+      } catch (err) {
+        alertBox.innerHTML = `<p style="color: var(--accent-rose);">Retraining failed: ${escapeHtml(err.message)}</p>`;
+      }
+    });
+  }
+
+  if (btnRefresh) {
+    btnRefresh.addEventListener("click", () => {
+      loadFeedbackTriage();
+    });
+  }
+}
+
+async function loadFeedbackTriage() {
+  const statsContainer = document.getElementById("feedback-stats-counters");
+  const tableBody = document.querySelector("#feedback-triage-table tbody");
+  if (!statsContainer || !tableBody) return;
+
+  try {
+    const res = await fetch("/api/feedback/stats");
+    if (!res.ok) return;
+    const data = await res.json();
+
+    statsContainer.innerHTML = `
+      <div style="flex: 1; min-width: 130px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Total Triage Feedback</div>
+        <div style="font-size: 1.3rem; font-weight: 700; color: #fff;">${data.total_feedback}</div>
+      </div>
+      <div style="flex: 1; min-width: 130px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">False Positives Logged</div>
+        <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent-cyan);">${data.false_positives}</div>
+      </div>
+      <div style="flex: 1; min-width: 130px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">False Negatives Logged</div>
+        <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent-rose);">${data.false_negatives}</div>
+      </div>
+      <div style="flex: 1; min-width: 130px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 6px;">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">Pending Retrain Queue</div>
+        <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent-amber);">${data.pending_retrain_samples}</div>
+      </div>
+    `;
+
+    if (data.recent_feedback && data.recent_feedback.length > 0) {
+      tableBody.innerHTML = data.recent_feedback.map(row => `
+        <tr>
+          <td class="mono">#${row.id}</td>
+          <td><span class="signal-tag">${escapeHtml(row.type)}</span></td>
+          <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(row.content)}</td>
+          <td><span style="color: ${row.predicted === 'PHISHING' ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 600;">${row.predicted}</span></td>
+          <td><span style="color: ${row.analyst === 'PHISHING' ? 'var(--accent-rose)' : 'var(--accent-emerald)'}; font-weight: 600;">${row.analyst}</span></td>
+          <td><span style="font-size: 0.78rem; font-weight: 700; color: ${row.feedback_type === 'FALSE_POSITIVE' ? 'var(--accent-cyan)' : (row.feedback_type === 'FALSE_NEGATIVE' ? 'var(--accent-rose)' : 'var(--accent-emerald)')};">${escapeHtml(row.feedback_type)}</span></td>
+          <td>${row.is_retrained ? '<span style="color: var(--accent-emerald); font-size: 0.8rem;">Retrained</span>' : '<span style="color: var(--accent-amber); font-size: 0.8rem;">Pending</span>'}</td>
+        </tr>
+      `).join("");
+    } else {
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 16px;">No analyst triage feedback recorded yet.</td></tr>`;
+    }
+  } catch (err) {
+    console.warn("Could not load feedback triage:", err);
+  }
+}
+
+async function submitAnalystFeedback(sampleType, predProb, predVerdict, analystVerdict) {
+  const content = sampleType === "email" ? (document.getElementById("email-body").value || document.getElementById("email-subject").value) : (document.getElementById("url-input").value);
+  const msgBox = document.getElementById("analyst-feedback-feedback-msg");
+
+  try {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sample_type: sampleType,
+        target_content: content,
+        predicted_prob: predProb,
+        predicted_verdict: predVerdict,
+        analyst_verdict: analystVerdict,
+        analyst_notes: `SOC Analyst verified ${analystVerdict}`
+      })
+    });
+    const data = await res.json();
+    if (msgBox) {
+      msgBox.style.display = "block";
+      msgBox.style.color = "var(--accent-emerald)";
+      msgBox.innerHTML = `✅ ${escapeHtml(data.message)} Added to continuous retraining queue.`;
+    }
+    loadFeedbackTriage();
+  } catch (err) {
+    alert("Could not log feedback: " + err.message);
+  }
+}
+
