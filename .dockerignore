@@ -1,0 +1,26 @@
+# Ignore Python cache & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+phishing_env/
+.venv/
+env/
+
+# Ignore local datasets and big raw files
+*.csv
+*.feather
+*.pkl
+*.npz
+!distilbert_cache.pkl
+!url_dnn_cache.pkl
+
+# Ignore Git & metadata
+.git/
+.gitignore
+.dockerignore
+
+# Ignore scratch & temporary files
+.system_generated/
+*.log
+scratch/
+

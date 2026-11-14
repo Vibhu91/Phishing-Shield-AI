@@ -25,6 +25,10 @@ Thumbs.db
 # Output cache & logs
 *.log
 
+# Candidate artifacts
+cand_*.pkl
+benchmark_a_expanded_manifest.pkl
+
 # Large Datasets & Intermediate Processing Files (>100MB exceeds GitHub limits)
 *.csv
 *.npz
