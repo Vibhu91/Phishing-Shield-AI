@@ -79,10 +79,27 @@ class MergedPhishingDetector:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"  • Hardware Backend: {self.device.type.upper()} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 
-        # 1. Load Email DistilBERT first (avoids LLVM symbol collision with TensorFlow on Linux)
+        # 1. Load Email DistilBERT first (with automatic HuggingFace hub fallback if weights weren't committed)
         print("  • Loading Email Phishing DistilBERT Transformer...")
-        self.tokenizer = AutoTokenizer.from_pretrained(distilbert_dir)
-        self.email_model = AutoModelForSequenceClassification.from_pretrained(distilbert_dir)
+        model_name_or_path = distilbert_dir
+        # Check if local weights exist
+        has_local_weights = (
+            os.path.exists(os.path.join(distilbert_dir, "model.safetensors")) or
+            os.path.exists(os.path.join(distilbert_dir, "pytorch_model.bin"))
+        )
+        if not has_local_weights:
+            print("    [i] Local weights not packaged in container. Loading fine-tuned phishing DistilBERT from HuggingFace Hub...")
+            model_name_or_path = "cybersectony/phishing-email-detection-distilbert_v2.4.1"
+
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+            self.email_model = AutoModelForSequenceClassification.from_pretrained(model_name_or_path)
+        except Exception as e:
+            print(f"    [!] Fallback to secondary security transformer: {e}")
+            fallback = "Aaqib099/distilbert-phishing-detection"
+            self.tokenizer = AutoTokenizer.from_pretrained(fallback)
+            self.email_model = AutoModelForSequenceClassification.from_pretrained(fallback)
+
         self.email_model.to(self.device)
         self.email_model.eval()
 
