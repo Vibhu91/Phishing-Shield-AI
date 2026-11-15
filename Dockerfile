@@ -1,11 +1,12 @@
 # ==============================================================================
 # Dockerfile: Multimodal Phishing Detection & SOC Intelligence Gateway
 # ==============================================================================
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # Prevent Python from writing .pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    KERAS_BACKEND=torch \
     DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
@@ -23,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir torch transformers flask flask-cors opencv-python-headless celery redis gunicorn
+    pip install --no-cache-dir "keras>=3.15.0" torch transformers flask flask-cors opencv-python-headless celery redis gunicorn
 
 # Copy all project code, preprocessed artifacts, and static dashboard
 COPY . /app/
@@ -35,5 +36,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Default command: launch production Gunicorn WSGI server
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]
+# Default command: launch production WSGI server with single worker & threads for ML stability
+CMD ["python", "app.py"]

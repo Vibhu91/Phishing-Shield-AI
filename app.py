@@ -8,6 +8,10 @@ Serves the modern Cybersecurity Dashboard frontend and exposes inference endpoin
 import os
 import sys
 import json
+
+# Force PyTorch backend for Keras on Linux containers to prevent TensorFlow LLVM option conflicts
+if "KERAS_BACKEND" not in os.environ:
+    os.environ["KERAS_BACKEND"] = "torch"
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -459,8 +463,9 @@ def system_status():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    print(f"\n[🚀] Starting Phishing Detection Web Server on http://127.0.0.1:{port}")
+    host = os.environ.get("HOST", "0.0.0.0")
+    print(f"\n[🚀] Starting Phishing Detection Web Server on http://{host}:{port}")
     # Preload detector on startup
     get_detector()
-    app.run(host="127.0.0.1", port=port, debug=False)
+    app.run(host=host, port=port, debug=False)
 

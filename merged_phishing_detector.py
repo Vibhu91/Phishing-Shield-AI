@@ -79,17 +79,17 @@ class MergedPhishingDetector:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"  • Hardware Backend: {self.device.type.upper()} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
 
-        # 1. Load URL DNN & Scaler
-        print("  • Loading URL Phishing DNN model & feature scaler...")
-        self.dnn_model = keras.models.load_model(dnn_file)
-        self.scaler = joblib.load(scaler_file)
-
-        # 2. Load Email DistilBERT
+        # 1. Load Email DistilBERT first (avoids LLVM symbol collision with TensorFlow on Linux)
         print("  • Loading Email Phishing DistilBERT Transformer...")
         self.tokenizer = AutoTokenizer.from_pretrained(distilbert_dir)
         self.email_model = AutoModelForSequenceClassification.from_pretrained(distilbert_dir)
         self.email_model.to(self.device)
         self.email_model.eval()
+
+        # 2. Load URL DNN & Scaler
+        print("  • Loading URL Phishing DNN model & feature scaler...")
+        self.dnn_model = keras.models.load_model(dnn_file)
+        self.scaler = joblib.load(scaler_file)
 
         print("[✓] Both models loaded and ready for dual-engine inference.\n")
 
