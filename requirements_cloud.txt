@@ -1,0 +1,17 @@
+# Lightweight dependencies for Cloud Free Tier (Render 512MB RAM)
+# Core ML & Transformers
+torch --index-url https://download.pytorch.org/whl/cpu
+transformers>=4.40.0
+keras>=3.0.0
+scikit-learn>=1.4.0
+
+# Data Processing
+numpy>=1.26.0
+pandas>=2.1.0
+scipy>=1.11.0
+joblib>=1.3.0
+
+# Web & Deployment
+flask>=3.0.0
+flask-cors>=4.0.0
+gunicorn>=21.0.0

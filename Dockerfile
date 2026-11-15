@@ -1,40 +1,41 @@
 # ==============================================================================
-# Dockerfile: Multimodal Phishing Detection & SOC Intelligence Gateway
+# Dockerfile: Optimized for 512MB Free Cloud Tier (Render / Railway / HuggingFace)
 # ==============================================================================
 FROM python:3.11-slim
 
-# Prevent Python from writing .pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     KERAS_BACKEND=torch \
-    DEBIAN_FRONTEND=noninteractive
+    MALLOC_TRIM_THRESHOLD_=100000 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1
 
 WORKDIR /app
 
-# Install essential system packages, OpenCV dependencies & build tools
+# Install only minimal runtime dependencies and curl
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libgl1 \
-    libglib2.0-0 \
-    libgomp1 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependency specifications and install Python wheels
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir "keras>=3.15.0" torch transformers flask flask-cors opencv-python-headless celery redis gunicorn
+# Install CPU-only PyTorch and inference libraries (prevents 2GB CUDA bloat)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir \
+        transformers \
+        "keras>=3.0.0" \
+        scikit-learn \
+        numpy \
+        pandas \
+        joblib \
+        flask \
+        flask-cors
 
-# Copy all project code, preprocessed artifacts, and static dashboard
+# Copy application files
 COPY . /app/
 
-# Expose HTTP dashboard and REST API port
 EXPOSE 5000
 
-# Healthcheck monitoring the Flask /api/health endpoint
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:5000/api/health || exit 1
 
-# Default command: launch production WSGI server with single worker & threads for ML stability
 CMD ["python", "app.py"]

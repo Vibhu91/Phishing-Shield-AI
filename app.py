@@ -465,7 +465,8 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     host = os.environ.get("HOST", "0.0.0.0")
     print(f"\n[🚀] Starting Phishing Detection Web Server on http://{host}:{port}")
-    # Preload detector on startup
-    get_detector()
+    # Lazy load on first request to preserve container memory under 512MB free tier
+    if os.environ.get("PRELOAD_MODELS", "0") == "1":
+        get_detector()
     app.run(host=host, port=port, debug=False)
 
